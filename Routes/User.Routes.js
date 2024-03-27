@@ -1,0 +1,21 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const AuthCheck_Middleware_1 = require("../Middleware/AuthCheck.Middleware");
+const User_Controller_1 = require("../Controllers/User.Controller");
+const Multer_Middleware_1 = require("./../Middleware/Multer.Middleware");
+const Router = express_1.default.Router();
+Router.route("/logout").get(AuthCheck_Middleware_1.UserAuthCheck, User_Controller_1.logoutUser);
+Router.route("/update/details").patch(AuthCheck_Middleware_1.UserAuthCheck, User_Controller_1.updateDetails);
+Router.route("/forgotPassword/directly").put(AuthCheck_Middleware_1.UserAuthCheck, User_Controller_1.forgotPasswordDirectly);
+Router.route("/generateEmailToken").get(AuthCheck_Middleware_1.UserAuthCheck, User_Controller_1.generateEmailVerificationTokens);
+Router.route("/verify/email/:token/:email").get(User_Controller_1.verifyEmail);
+Router.route("/change/email").patch(AuthCheck_Middleware_1.UserAuthCheck, User_Controller_1.changeUserEmail);
+Router.route("/generate/password/tokens").patch(User_Controller_1.generatePasswordResetTokens);
+Router.route("/change/password/link/:token/:email").patch(User_Controller_1.changePasswordFromEmailLink);
+Router.route("/get/NewAccessToken").get(User_Controller_1.getNewAccessToken);
+Router.route('/set/avatar').patch(AuthCheck_Middleware_1.UserAuthCheck, Multer_Middleware_1.uploadLocal.single("avatar"), User_Controller_1.setNewAvatar);
+exports.default = Router;
