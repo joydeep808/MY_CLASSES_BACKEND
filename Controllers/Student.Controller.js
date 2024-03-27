@@ -20,6 +20,7 @@ const Responses_1 = require("../Utilities/Responses");
 const crypto_1 = __importDefault(require("crypto"));
 const User_Models_1 = require("../Models/User.Models");
 const Teacher_Models_1 = require("../Models/Teacher.Models");
+const Workers_1 = require("../Utilities/Workers");
 exports.registerAStudent = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { email, name, phoneNumber, currentClass, reffralId } = req.body;
@@ -45,9 +46,12 @@ exports.registerAStudent = (0, AsyncHandler_1.asyncHandler)((req, res, next) => 
             const { hashedToken, unhashedToken, tokenExpiry } = yield (0, Utilities_1.generateVerificationTokens)();
             newUser.emailVerificationToken = hashedToken;
             newUser.emailVerificationExpiry = tokenExpiry;
+            const redirectdLink = `${req.protocol}://${req.get("host")}/verify/email/${unhashedToken}/${newUser.email}`;
+            yield (0, Workers_1.addOnBoardingEmailQueue)(newUser.email, UUID[0], UUID[4], newUser.name);
+            yield (0, Workers_1.addEmailVerificationQueue)(newUser.email, redirectdLink, newUser.name);
             yield newUser.save();
             yield newStudent.save();
-            (0, Responses_1.ApiSuccessResponse)(res, 200, "Student Registration Success", [UUID[0], UUID[4], unhashedToken]);
+            (0, Responses_1.ApiSuccessResponse)(res, 200, "Student Registration Success");
         }
         catch (error) {
             if (error.code) {

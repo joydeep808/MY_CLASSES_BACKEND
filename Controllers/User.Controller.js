@@ -20,6 +20,7 @@ const Responses_1 = require("../Utilities/Responses");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const User_Models_1 = require("../Models/User.Models");
 const Multer_Middleware_1 = require("../Middleware/Multer.Middleware");
+const Workers_1 = require("../Utilities/Workers");
 exports.logoutUser = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const student = req.user;
@@ -78,7 +79,6 @@ exports.forgotPasswordDirectly = (0, AsyncHandler_1.asyncHandler)((req, res, nex
         (0, Responses_1.ApiSuccessResponse)(res, 200, "Password changed successfully done ");
     }
     catch (error) {
-        console.log(error);
         next(error);
     }
 }));
@@ -88,8 +88,10 @@ exports.generateEmailVerificationTokens = (0, AsyncHandler_1.asyncHandler)((req,
         const { hashedToken, tokenExpiry, unhashedToken } = yield (0, Utilities_1.generateVerificationTokens)();
         student.emailVerificationToken = hashedToken;
         student.emailVerificationExpiry = tokenExpiry;
+        const redirectdLink = `${req.protocol}://${req.get("host")}/verify/email/${unhashedToken}/${student.email}`;
+        yield (0, Workers_1.addEmailVerificationQueue)(student.email, redirectdLink, student.name);
         yield student.save({});
-        (0, Responses_1.ApiSuccessResponse)(res, 200, "Please check your email ", { unhashedToken });
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "Please check your email ");
     }
     catch (error) {
         next(error);
@@ -162,6 +164,8 @@ exports.generatePasswordResetTokens = (0, AsyncHandler_1.asyncHandler)((req, res
         isUserFound.forgotPasswordToken = hashedToken;
         isUserFound.forgotPasswordExpiry = tokenExpiry;
         yield isUserFound.save({ validateBeforeSave: false });
+        const redirectLink = `${req.protocol}://${req.get("host")}/change/password/link/${unhashedToken}/${email}`;
+        yield (0, Workers_1.addResetPasswordEmailQueue)(email, redirectLink, isUserFound.name);
         (0, Responses_1.ApiSuccessResponse)(res, 200, "Email send please check and reset your password", unhashedToken);
     }
     catch (error) {
