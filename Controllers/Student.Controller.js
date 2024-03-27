@@ -24,9 +24,6 @@ const Workers_1 = require("../Utilities/Workers");
 exports.registerAStudent = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { email, name, phoneNumber, currentClass, reffralId } = req.body;
-        const isUserAlreadyExist = yield User_Models_1.User.findOne({ userName: reffralId });
-        if (!isUserAlreadyExist)
-            throw new Responses_1.ApiErrorResponse(404, "Reffral not found");
         try {
             const UUID = crypto_1.default.randomUUID().split("-");
             const password = yield (0, Utilities_1.hashPassword)(UUID[0]);

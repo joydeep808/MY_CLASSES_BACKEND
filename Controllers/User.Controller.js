@@ -123,7 +123,6 @@ exports.verifyEmail = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awa
         (0, Responses_1.ApiSuccessResponse)(res, 200, "Successfully verifyed the email");
     }
     catch (error) {
-        console.log(error);
         next(error);
     }
 }));
