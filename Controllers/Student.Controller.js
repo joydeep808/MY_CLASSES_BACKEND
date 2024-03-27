@@ -61,6 +61,7 @@ exports.registerAStudent = (0, AsyncHandler_1.asyncHandler)((req, res, next) => 
         }
     }
     catch (error) {
+        console.log(error);
         next(error);
     }
 }));
