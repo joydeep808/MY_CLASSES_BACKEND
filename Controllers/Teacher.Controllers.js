@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateDetailsTeacher = exports.checkStudentEnroll = exports.RegisterTeacher = void 0;
+exports.TeacherLogin = exports.updateDetailsTeacher = exports.checkStudentEnroll = exports.RegisterTeacher = void 0;
 const Teacher_Models_1 = require("../Models/Teacher.Models");
 const Utilities_1 = require("../Utilities");
 const AsyncHandler_1 = require("../Utilities/AsyncHandler");
@@ -84,6 +84,48 @@ exports.updateDetailsTeacher = (0, AsyncHandler_1.asyncHandler)((req, res, next)
         completeAddress && (AnotherTeacherDetails.completeAddress = completeAddress);
         yield AnotherTeacherDetails.save({ validateBeforeSave: false });
         (0, Responses_1.ApiSuccessResponse)(res, 200, "Update changes successfully done!");
+    }
+    catch (error) {
+        next(error);
+    }
+}));
+exports.TeacherLogin = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { email, password } = req.body;
+        const isTeacher = yield User_Models_1.User.findOne({ $or: [{ email }, { userName: email }] }).select(" -sessionToken -refreshToken -forgotPasswordToken -forgotPasswordExpiry -emailVerificationToken -emailVerificationExpiry    ");
+        if (!isTeacher) {
+            throw new Responses_1.ApiErrorResponse(404, "Teacher not found with this details");
+        }
+        if (isTeacher.role !== "TEACHER")
+            throw new Responses_1.ApiErrorResponse(400, "You are not able to login in student site");
+        if (isTeacher.isAccountBlocked) {
+            throw new Responses_1.ApiErrorResponse(401, "Your Account is Blocked please contact our team");
+        }
+        if (isTeacher.isAccountFreez === true && isTeacher.accountFreezTime > Date.now()) {
+            throw new Responses_1.ApiErrorResponse(401, "Your account freezed try again 24 hours for security purpose ");
+        }
+        const isPasswordValid = yield (0, Utilities_1.isValidPassword)(password, isTeacher.password);
+        if (!isPasswordValid) {
+            if (isTeacher.incorrectPasswordCounter === 0) {
+                isTeacher.isAccountFreez = true;
+                yield isTeacher.save({ validateBeforeSave: false });
+                throw new Responses_1.ApiErrorResponse(400, "Your account is freez due to multiple incorrect password tries");
+            }
+            if (isTeacher.incorrectPasswordCounter > 0) {
+                isTeacher.incorrectPasswordCounter -= 1;
+                yield isTeacher.save({ validateBeforeSave: false });
+                throw new Responses_1.ApiErrorResponse(400, `Your Password is incorrect ${isTeacher.incorrectPasswordCounter} tries left`);
+            }
+        }
+        const { refreshToken, sessionToken } = yield (0, Utilities_1.generateSessionTokens)(isTeacher);
+        isTeacher.sessionToken = sessionToken;
+        isTeacher.refreshToken = refreshToken;
+        isTeacher.incorrectPasswordCounter = 5;
+        yield isTeacher.save({ validateBeforeSave: false });
+        return res
+            .cookie("accessToken", sessionToken)
+            .cookie("refreshToken", refreshToken)
+            .json(new Responses_1.ApiResponse(200, "Login successfully Done ", isTeacher));
     }
     catch (error) {
         next(error);

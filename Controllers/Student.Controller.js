@@ -103,7 +103,6 @@ exports.StudentLogin = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __aw
             .json(new Responses_1.ApiResponse(200, "Login successfully Done ", isStudentFound));
     }
     catch (error) {
-        console.log(error);
         next(error);
     }
 }));
