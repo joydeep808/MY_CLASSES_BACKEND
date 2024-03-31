@@ -71,9 +71,9 @@ const WelcomeEmailSend = (name, userName, password) => {
 
 
 
-        <p style="font-size:16px;line-height:24px;margin:16px 0;color:#525f7f;text-align:left">Your userName <span style="color:#fff; font-size:16px">${userName}</span> </p>
+        <p style="font-size:16px;line-height:24px;margin:16px 0;color:#525f7f;text-align:left">Your userName <span style="color:#000000; font-size:16px">${userName}</span> </p>
 
-        <p style="font-size:16px;line-height:24px;margin:16px 0;color:#525f7f;text-align:left">And your password <span style="color:#fff; font-size:16px">${password}</span> </p>
+        <p style="font-size:16px;line-height:24px;margin:16px 0;color:#525f7f;text-align:left">And your password <span style="color:#000000; font-size:16px">${password}</span> </p>
 
         <p style="font-size:16px;line-height:24px;margin:16px 0;color:#525f7f;text-align:left">You can access Your Account from The Website</p>
 
