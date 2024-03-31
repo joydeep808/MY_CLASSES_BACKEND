@@ -24,8 +24,8 @@ const sendEmail = (email, subject, mailgenContent) => __awaiter(void 0, void 0, 
     const mailGenerator = new mailgen_1.default({
         theme: "default",
         product: {
-            name: "Joydeep Debnath",
-            link: "youtube.com", // in this you have to enter your website email
+            name: "MY CLASSES",
+            link: "www.myclassestripura.com", // in this you have to enter your website email
         },
     });
     const emailTextual = mailGenerator.generatePlaintext(mailgenContent);
