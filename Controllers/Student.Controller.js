@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.demoClassBook = exports.studentAppliedForTeacher = exports.searchTeacher = exports.applyForTeacherInquary = exports.showTeachers = exports.checkReffralsUsers = exports.StudentLogin = exports.registerAStudent = void 0;
+exports.demoClassBook = exports.studentInquiredForTeacher = exports.getTeacherByUsername = exports.searchTeacher = exports.applyForTeacherInquary = exports.showTeachers = exports.checkReffralsUsers = exports.StudentLogin = exports.registerAStudent = void 0;
 const Student_Models_1 = require("../Models/Student.Models");
 const Utilities_1 = require("../Utilities");
 const AsyncHandler_1 = require("../Utilities/AsyncHandler");
@@ -61,7 +61,6 @@ exports.registerAStudent = (0, AsyncHandler_1.asyncHandler)((req, res, next) => 
         }
     }
     catch (error) {
-        console.log(error);
         next(error);
     }
 }));
@@ -160,8 +159,6 @@ exports.showTeachers = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __aw
                         {
                             $project: {
                                 name: 1,
-                                email: 1,
-                                phoneNumber: 1
                             }
                         }
                     ]
@@ -227,8 +224,6 @@ exports.searchTeacher = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __a
                         {
                             $project: {
                                 name: 1,
-                                email: 1,
-                                phoneNumber: 1
                             }
                         }
                     ]
@@ -248,7 +243,48 @@ exports.searchTeacher = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __a
         next(error);
     }
 }));
-exports.studentAppliedForTeacher = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+exports.getTeacherByUsername = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { userName } = req.params;
+        const TeacherDetails = yield Teacher_Models_1.Teacher.aggregate([
+            {
+                $match: {
+                    teacherId: userName
+                }
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "teacherId",
+                    foreignField: "userName",
+                    as: "Teachers",
+                    pipeline: [
+                        {
+                            $project: {
+                                name: 1,
+                                email: 1,
+                                phoneNumber: 1
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                $addFields: {
+                    Teachers: { $first: "$Teachers" }
+                }
+            }
+        ]);
+        if (TeacherDetails.length === 0) {
+            throw new Responses_1.ApiErrorResponse(404, "Teacher not found with this userName");
+        }
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "Successfully found the teacher", TeacherDetails);
+    }
+    catch (error) {
+        next(error);
+    }
+}));
+exports.studentInquiredForTeacher = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const student = req.user;
         if (student.role !== "STUDENT")
@@ -293,7 +329,7 @@ exports.studentAppliedForTeacher = (0, AsyncHandler_1.asyncHandler)((req, res, n
             },
             {
                 $addFields: {
-                    teacher: { $first: "$Teachers" },
+                    Teachers: { $first: "$Teachers" },
                 },
             },
         ]);

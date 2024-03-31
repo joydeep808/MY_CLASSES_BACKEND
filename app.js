@@ -37,6 +37,7 @@ const Student_Route_1 = __importDefault(require("./Routes/Student.Route"));
 const Admin_Routes_1 = __importDefault(require("./Routes/Admin.Routes"));
 const Teacher_Routes_1 = __importDefault(require("./Routes/Teacher.Routes"));
 const mongoose_1 = __importDefault(require("mongoose"));
+exports.App.get("/health", (req, res) => { (0, Responses_1.ApiSuccessResponse)(res, 200, "Everything looks fine"); });
 exports.App.use("/api/v1/user", User_Routes_1.default);
 exports.App.use("/api/v1/student", Student_Route_1.default);
 exports.App.use("/api/v1/admin", Admin_Routes_1.default);

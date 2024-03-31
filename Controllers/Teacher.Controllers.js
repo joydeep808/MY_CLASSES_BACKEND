@@ -89,3 +89,4 @@ exports.updateDetailsTeacher = (0, AsyncHandler_1.asyncHandler)((req, res, next)
         next(error);
     }
 }));
+const monthlyPayment = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () { }));
