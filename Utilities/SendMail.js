@@ -33,12 +33,10 @@ const sendEmail = (email, subject, mailgenContent) => __awaiter(void 0, void 0, 
     const emailHtml = mailGenerator.generate(mailgenContent);
     // Create a nodemailer transporter instance which is responsible to send a mail
     const transporter = nodemailer_1.default.createTransport({
-        host: "My Classes", // Enter Your Name 
-        service: 'Gmail',
-        port: 456,
-        secure: true,
+        host: process.env.HOST_NAME, // Enter Your Name 
+        port: process.env.EMAIL_PORT,
         auth: {
-            user: process.env.EMAIL,
+            user: "api",
             pass: process.env.EMAIL_PASSWORD,
         },
     });
