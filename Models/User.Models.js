@@ -33,9 +33,6 @@ const UserSchema = new mongoose_1.Schema({
         required: true,
         unique: true
     },
-    sessionToken: {
-        type: String,
-    },
     refreshToken: {
         type: String
     },

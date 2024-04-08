@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.unhashedToHashed = exports.generateVerificationTokens = exports.generateSessionTokens = exports.isValidPassword = exports.hashPassword = void 0;
+exports.unhashedToHashed = exports.generateVerificationTokens = exports.generateAccessToken = exports.generateSessionTokens = exports.isValidPassword = exports.hashPassword = void 0;
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const crypto_1 = __importDefault(require("crypto"));
@@ -24,12 +24,17 @@ const isValidPassword = (password, hashPassword) => __awaiter(void 0, void 0, vo
     return bcrypt_1.default.compareSync(password, hashPassword);
 });
 exports.isValidPassword = isValidPassword;
-const generateSessionTokens = (student) => __awaiter(void 0, void 0, void 0, function* () {
-    const sessionToken = jsonwebtoken_1.default.sign({ userName: student.userName, email: student.email, role: student.role }, process.env.ACCESS_TOKEN_SECRET);
-    const refreshToken = jsonwebtoken_1.default.sign({ id: student._id }, process.env.REFRESH_TOKEN_SECRET);
+const generateSessionTokens = (user) => __awaiter(void 0, void 0, void 0, function* () {
+    const sessionToken = jsonwebtoken_1.default.sign({ userName: user.userName, email: user.email, role: user.role }, process.env.ACCESS_TOKEN_SECRET);
+    const refreshToken = jsonwebtoken_1.default.sign({ id: user._id }, process.env.REFRESH_TOKEN_SECRET);
     return { sessionToken, refreshToken };
 });
 exports.generateSessionTokens = generateSessionTokens;
+const generateAccessToken = (user) => __awaiter(void 0, void 0, void 0, function* () {
+    const sessionToken = jsonwebtoken_1.default.sign({ userName: user.userName, email: user.email, role: user.role }, process.env.ACCESS_TOKEN_SECRET);
+    return sessionToken;
+});
+exports.generateAccessToken = generateAccessToken;
 const generateVerificationTokens = () => __awaiter(void 0, void 0, void 0, function* () {
     const unhashedToken = crypto_1.default.randomBytes(16).toString("hex");
     const hashedToken = crypto_1.default

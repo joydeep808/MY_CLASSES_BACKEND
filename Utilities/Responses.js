@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.globleErrorHandler = exports.ApiSuccessResponse = exports.ApiErrorResponse = exports.ApiResponse = void 0;
+const jsonwebtoken_1 = require("jsonwebtoken");
 class ApiResponse {
     constructor(statusCode, message, data, success) {
         this.statusCode = statusCode;
@@ -31,6 +32,13 @@ const ApiSuccessResponse = (res, statusCode = 200, message, data) => {
 };
 exports.ApiSuccessResponse = ApiSuccessResponse;
 function globleErrorHandler(err, req, res, next) {
+    if (err instanceof jsonwebtoken_1.JsonWebTokenError) {
+        return res.status(401).json({
+            statusCode: 401,
+            message: "Please login",
+            success: false
+        });
+    }
     if (err instanceof ApiErrorResponse) {
         return res.status(err.statusCode).json({
             statusCode: err.statusCode,

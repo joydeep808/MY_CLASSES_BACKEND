@@ -27,6 +27,10 @@ const TeacherSchema = new mongoose_1.Schema({
         type: String,
         required: true
     },
+    coverImage: {
+        type: [String],
+        default: []
+    },
     status: {
         type: "String",
         enum: ["SUCCESS", "REJECTED", "PENDING"],

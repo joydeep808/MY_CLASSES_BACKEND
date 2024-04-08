@@ -24,7 +24,6 @@ const Workers_1 = require("../Utilities/Workers");
 exports.logoutUser = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const student = req.user;
-        student.sessionToken = "";
         student.refreshToken = "";
         yield student.save({ validateBeforeSave: false });
         return res.clearCookie("accessToken").clearCookie("refreshToken").json(new Responses_1.ApiResponse(200, "Logout successfully done"));
@@ -216,7 +215,6 @@ exports.getNewAccessToken = (0, AsyncHandler_1.asyncHandler)((req, res, next) =>
         }
         const { refreshToken, sessionToken } = yield (0, Utilities_1.generateSessionTokens)(foundStudent);
         foundStudent.refreshToken = refreshToken;
-        foundStudent.sessionToken = sessionToken;
         yield foundStudent.save({ validateBeforeSave: false });
         res.cookie("accessToken", sessionToken).cookie("refreshToken", refreshToken).json(new Responses_1.ApiResponse(200, "Successfully generated "));
     }

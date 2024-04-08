@@ -23,22 +23,30 @@ exports.UserAuthCheck = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __a
         const accessToken = req.cookies.accessToken;
         if (!accessToken)
             throw new Responses_1.ApiErrorResponse(401, "Unauthorized access");
-        const { userName } = jsonwebtoken_1.default.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
-        if (!userName) {
-            res.clearCookie("accessToken").clearCookie("refreshToken");
-            throw new Responses_1.ApiErrorResponse(401, "Access token invalid");
+        try {
+            const { userName } = jsonwebtoken_1.default.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
+            if (!userName) {
+                return res.clearCookie("accessToken", {
+                    httpOnly: true,
+                    secure: true,
+                    sameSite: "none",
+                    path: "/"
+                }).json(new Responses_1.ApiErrorResponse(401, "Please login again "));
+            }
+            const foundUser = yield User_Models_1.User.findOne({ userName });
+            if (!foundUser) {
+                return res.clearCookie("accessToken").status(401).json(new Responses_1.ApiErrorResponse(401, "User not found "));
+            }
+            if (foundUser.isAccountBlocked) {
+                return res.clearCookie("accessToken").status(401).json(new Responses_1.ApiErrorResponse(401, "User blocked please contact to our team to unblock your account"));
+            }
+            req.user = foundUser;
+            next();
         }
-        const foundUser = yield User_Models_1.User.findOne({ userName });
-        if (!foundUser) {
-            res.clearCookie("accessToken").clearCookie("refreshToken");
-            throw new Responses_1.ApiErrorResponse(404, "No User found");
+        catch (error) {
+            res.clearCookie("accessToken");
+            return res.status(401).json(new Responses_1.ApiErrorResponse(401, "invalid access token"));
         }
-        if (foundUser.isAccountBlocked) {
-            res.clearCookie("sessionToken");
-            throw new Responses_1.ApiErrorResponse(401, "User blocked please contact to our team to unblock your account");
-        }
-        req.user = foundUser;
-        next();
     }
     catch (error) {
         next(error);

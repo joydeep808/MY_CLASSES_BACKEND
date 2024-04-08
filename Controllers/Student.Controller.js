@@ -93,13 +93,20 @@ exports.StudentLogin = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __aw
             }
         }
         const { refreshToken, sessionToken } = yield (0, Utilities_1.generateSessionTokens)(isStudentFound);
-        isStudentFound.sessionToken = sessionToken;
         isStudentFound.refreshToken = refreshToken;
         isStudentFound.incorrectPasswordCounter = 5;
         yield isStudentFound.save({ validateBeforeSave: false });
         return res
-            .cookie("accessToken", sessionToken)
-            .cookie("refreshToken", refreshToken)
+            .cookie("accessToken", sessionToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none"
+        })
+            .cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none"
+        })
             .json(new Responses_1.ApiResponse(200, "Login successfully Done ", isStudentFound));
     }
     catch (error) {

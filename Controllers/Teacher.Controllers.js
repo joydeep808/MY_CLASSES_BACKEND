@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TeacherLogin = exports.updateDetailsTeacher = exports.checkStudentEnroll = exports.RegisterTeacher = void 0;
+exports.addCoverImage = exports.TeacherLogin = exports.updateDetailsTeacher = exports.checkStudentEnroll = exports.RegisterTeacher = void 0;
 const Teacher_Models_1 = require("../Models/Teacher.Models");
 const Utilities_1 = require("../Utilities");
 const AsyncHandler_1 = require("../Utilities/AsyncHandler");
@@ -118,7 +118,6 @@ exports.TeacherLogin = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __aw
             }
         }
         const { refreshToken, sessionToken } = yield (0, Utilities_1.generateSessionTokens)(isTeacher);
-        isTeacher.sessionToken = sessionToken;
         isTeacher.refreshToken = refreshToken;
         isTeacher.incorrectPasswordCounter = 5;
         yield isTeacher.save({ validateBeforeSave: false });
@@ -130,5 +129,8 @@ exports.TeacherLogin = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __aw
     catch (error) {
         next(error);
     }
+}));
+exports.addCoverImage = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const teacher = req.user;
 }));
 const monthlyPayment = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () { }));

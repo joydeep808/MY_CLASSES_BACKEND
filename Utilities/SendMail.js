@@ -24,7 +24,7 @@ const sendEmail = (email, subject, mailgenContent) => __awaiter(void 0, void 0, 
     const mailGenerator = new mailgen_1.default({
         theme: "default",
         product: {
-            name: "MY CLASSES",
+            name: process.env.EMAIL_NAME,
             link: "www.myclassestripura.com", // in this you have to enter your website email
         },
     });
