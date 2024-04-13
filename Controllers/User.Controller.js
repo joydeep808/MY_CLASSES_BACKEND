@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.setNewAvatar = exports.getNewAccessToken = exports.changePasswordFromEmailLink = exports.generatePasswordResetTokens = exports.changeUserEmail = exports.verifyEmail = exports.generateEmailVerificationTokens = exports.forgotPasswordDirectly = exports.updateDetails = exports.logoutUser = void 0;
+exports.setNewAvatar = exports.getNewAccessToken = exports.changePasswordFromEmailOTP = exports.generatePasswordResetTokens = exports.changeUserEmail = exports.forgotPasswordDirectly = exports.updateDetails = exports.generateResendOTP = exports.verifyEmail = exports.logoutUser = void 0;
 const Student_Models_1 = require("../Models/Student.Models");
 const Utilities_1 = require("../Utilities");
 const AsyncHandler_1 = require("../Utilities/AsyncHandler");
@@ -27,6 +27,70 @@ exports.logoutUser = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awai
         student.refreshToken = "";
         yield student.save({ validateBeforeSave: false });
         return res.clearCookie("accessToken").clearCookie("refreshToken").json(new Responses_1.ApiResponse(200, "Logout successfully done"));
+    }
+    catch (error) {
+        next(error);
+    }
+}));
+exports.verifyEmail = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { email, otp } = req.body;
+        const FoundEmail = yield User_Models_1.User.findOne({ email }).select("-refreshToken -password -forgetPasswordExpiry -forgotPasswordToken -isAccountFreez  -isAccountBlocked");
+        if (!FoundEmail) {
+            throw new Responses_1.ApiErrorResponse(404, "User not found with this email ");
+        }
+        if (FoundEmail.incorrectPasswordCounter === 0) {
+            throw new Responses_1.ApiErrorResponse(403, "You have reached daily otp tries try again after 24 hours");
+        }
+        if (FoundEmail.emailVerified) {
+            throw new Responses_1.ApiErrorResponse(400, "Your email already verifyed");
+        }
+        if (otp !== FoundEmail.EmailOtp) {
+            const OneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+            if (FoundEmail.emailVerificationExpiry < OneDayAgo) {
+                FoundEmail.incorrectPasswordCounter = 4;
+                FoundEmail.save({ validateBeforeSave: false });
+                throw new Responses_1.ApiErrorResponse(400, `Opt not valid only ${4} tries left`);
+            }
+            FoundEmail.incorrectPasswordCounter -= 1;
+            const incorrectEmailDetails = yield FoundEmail.save({ validateBeforeSave: false });
+            throw new Responses_1.ApiErrorResponse(400, `Opt not valid only ${(yield incorrectEmailDetails).incorrectPasswordCounter} tries left`);
+        }
+        if (FoundEmail.emailVerificationExpiry <= Date.now()) {
+            throw new Responses_1.ApiErrorResponse(400, "Otp Expired try again with new OTP");
+        }
+        FoundEmail.emailVerified = true;
+        FoundEmail.incorrectPasswordCounter = 5;
+        FoundEmail.save({ validateBeforeSave: false });
+        yield (0, Workers_1.addOnBoardingEmailQueue)(FoundEmail.email, FoundEmail.userName, FoundEmail.name);
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "Email successfully verifyed", FoundEmail);
+    }
+    catch (error) {
+        next(error);
+    }
+}));
+exports.generateResendOTP = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { email } = req.body;
+        const FoundUser = yield User_Models_1.User.findOne({ email });
+        if (!FoundUser) {
+            throw new Responses_1.ApiErrorResponse(404, "User not found with this email");
+        }
+        if (FoundUser.emailVerified === true) {
+            throw new Responses_1.ApiErrorResponse(401, "Email already verifyed");
+        }
+        const OneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+        if (FoundUser.emailVerificationExpiry < OneDayAgo) {
+            const { otp, tokenExpiry } = yield (0, Utilities_1.generateVerificationTokens)();
+            FoundUser.EmailOtp = otp;
+            FoundUser.emailVerificationExpiry = tokenExpiry;
+            FoundUser.save({ validateBeforeSave: false });
+            yield (0, Workers_1.addEmailVerificationQueue)(FoundUser.email, otp, FoundUser.name);
+            (0, Responses_1.ApiSuccessResponse)(res, 200, "OTP send ");
+        }
+        if (FoundUser.incorrectPasswordCounter === 0) {
+            throw new Responses_1.ApiErrorResponse(403, "You have reached your otp tries limit try again 24 hours");
+        }
     }
     catch (error) {
         next(error);
@@ -81,50 +145,6 @@ exports.forgotPasswordDirectly = (0, AsyncHandler_1.asyncHandler)((req, res, nex
         next(error);
     }
 }));
-exports.generateEmailVerificationTokens = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const student = req.user;
-    try {
-        const { hashedToken, tokenExpiry, unhashedToken } = yield (0, Utilities_1.generateVerificationTokens)();
-        student.emailVerificationToken = hashedToken;
-        student.emailVerificationExpiry = tokenExpiry;
-        const redirectdLink = `${req.protocol}://${req.get("host")}/verify/email/${unhashedToken}/${student.email}`;
-        yield (0, Workers_1.addEmailVerificationQueue)(student.email, redirectdLink, student.name);
-        yield student.save({});
-        (0, Responses_1.ApiSuccessResponse)(res, 200, "Please check your email ");
-    }
-    catch (error) {
-        next(error);
-    }
-}));
-exports.verifyEmail = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const { token, email } = req.params;
-        const isEmailVerifyed = yield User_Models_1.User.findOne({ email });
-        if (!isEmailVerifyed) {
-            throw new Responses_1.ApiErrorResponse(404, "Email not valid");
-        }
-        if (isEmailVerifyed.emailVerified === true) {
-            throw new Responses_1.ApiErrorResponse(400, "email already verifyed");
-        }
-        if (isEmailVerifyed.emailVerificationExpiry < Date.now()) {
-            throw new Responses_1.ApiErrorResponse(400, "Token expired");
-        }
-        const hashedToken = yield (0, Utilities_1.unhashedToHashed)(token);
-        if (!hashedToken) {
-            throw new Responses_1.ApiErrorResponse(400, "Please check the paramiters");
-        }
-        if (isEmailVerifyed.emailVerificationToken !== hashedToken) {
-            throw new Responses_1.ApiErrorResponse(400, "Token not valid");
-        }
-        isEmailVerifyed.emailVerificationToken = "";
-        isEmailVerifyed.emailVerified = true;
-        yield isEmailVerifyed.save({ validateBeforeSave: false });
-        (0, Responses_1.ApiSuccessResponse)(res, 200, "Successfully verifyed the email");
-    }
-    catch (error) {
-        next(error);
-    }
-}));
 exports.changeUserEmail = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const user = req.user;
@@ -158,33 +178,39 @@ exports.generatePasswordResetTokens = (0, AsyncHandler_1.asyncHandler)((req, res
         if (isUserFound.emailVerified === false) {
             throw new Responses_1.ApiErrorResponse(400, "You are not able to change the password beacuse email not verifyed ");
         }
-        const { hashedToken, tokenExpiry, unhashedToken } = yield (0, Utilities_1.generateVerificationTokens)();
-        isUserFound.forgotPasswordToken = hashedToken;
+        const { otp, tokenExpiry } = yield (0, Utilities_1.generateVerificationTokens)();
+        isUserFound.forgotPasswordToken = otp;
         isUserFound.forgotPasswordExpiry = tokenExpiry;
         yield isUserFound.save({ validateBeforeSave: false });
-        const redirectLink = `${req.protocol}://${req.get("host")}/change/password/link/${unhashedToken}/${email}`;
-        yield (0, Workers_1.addResetPasswordEmailQueue)(email, redirectLink, isUserFound.name);
-        (0, Responses_1.ApiSuccessResponse)(res, 200, "Email send please check and reset your password", unhashedToken);
+        yield (0, Workers_1.addResetPasswordEmailQueue)(email, otp, isUserFound.name);
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "Email send please check and reset your password");
     }
     catch (error) {
         next(error);
     }
 }));
-exports.changePasswordFromEmailLink = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+exports.changePasswordFromEmailOTP = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { token, email } = req.params;
-        const { newPassword } = req.body;
+        const { otp, email, newPassword } = req.body;
+        if (!otp) {
+            throw new Responses_1.ApiErrorResponse(400, "Please provide valid otp ");
+        }
+        if (!email) {
+            throw new Responses_1.ApiErrorResponse(400, "Please provide email");
+        }
+        if (!newPassword) {
+            throw new Responses_1.ApiErrorResponse(400, "Please provide the newPassword");
+        }
         const isUserFound = yield User_Models_1.User.findOne({ email });
         if (!isUserFound) {
             throw new Responses_1.ApiErrorResponse(404, "User not found");
         }
         if (isUserFound.forgotPasswordExpiry < Date.now()) {
-            throw new Responses_1.ApiErrorResponse(404, "Token already expired");
+            throw new Responses_1.ApiErrorResponse(404, "OTP already expired");
         }
         const hashedPassword = yield (0, Utilities_1.hashPassword)(newPassword);
-        const hashedToken = yield (0, Utilities_1.unhashedToHashed)(token);
-        if (isUserFound.forgotPasswordToken !== hashedToken) {
-            throw new Responses_1.ApiErrorResponse(404, "Token not valid ");
+        if (isUserFound.forgotPasswordToken !== otp) {
+            throw new Responses_1.ApiErrorResponse(404, "OTP not valid ");
         }
         isUserFound.password = hashedPassword;
         isUserFound.forgotPasswordToken = "";

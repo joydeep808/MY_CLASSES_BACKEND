@@ -46,6 +46,7 @@ function globleErrorHandler(err, req, res, next) {
             success: err.success
         });
     }
+    console.log(err);
     return res.status(500).json({
         statusCode: 500,
         message: "Something went wrong from our side ",

@@ -19,6 +19,13 @@ const TeacherSchema = new mongoose_1.Schema({
         type: [String],
         required: true
     },
+    classesTeaching: {
+        type: String,
+        default: "8 to 12",
+    },
+    teacherSpecializeFor: {
+        type: String
+    },
     locality: {
         type: String,
         required: true

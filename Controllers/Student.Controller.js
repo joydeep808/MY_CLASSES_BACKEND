@@ -20,35 +20,36 @@ const Responses_1 = require("../Utilities/Responses");
 const crypto_1 = __importDefault(require("crypto"));
 const User_Models_1 = require("../Models/User.Models");
 const Teacher_Models_1 = require("../Models/Teacher.Models");
+const bcrypt_1 = __importDefault(require("bcrypt"));
 const Workers_1 = require("../Utilities/Workers");
+const RedisConnection_1 = require("../Redis/RedisConnection");
 exports.registerAStudent = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { email, name, phoneNumber, currentClass, reffralId } = req.body;
+        const { email, name, phoneNumber, currentClass, reffralId, password } = req.body;
         try {
             const UUID = crypto_1.default.randomUUID().split("-");
-            const password = yield (0, Utilities_1.hashPassword)(UUID[0]);
+            const hashPassword = bcrypt_1.default.hashSync(password, 10);
             const newUser = yield User_Models_1.User.create({
                 email,
                 name,
                 phoneNumber,
                 currentClass,
                 userName: UUID[4],
-                password
+                password: hashPassword
             });
             const newStudent = yield Student_Models_1.Student.create({
                 studentId: newUser.userName,
                 currentClass,
                 reffralId: reffralId
             });
-            const { hashedToken, unhashedToken, tokenExpiry } = yield (0, Utilities_1.generateVerificationTokens)();
-            newUser.emailVerificationToken = hashedToken;
+            const { otp, tokenExpiry } = yield (0, Utilities_1.generateVerificationTokens)();
+            newUser.EmailOtp = otp;
             newUser.emailVerificationExpiry = tokenExpiry;
-            const redirectdLink = `${req.protocol}://${req.get("host")}/verify/email/${unhashedToken}/${newUser.email}`;
-            yield (0, Workers_1.addOnBoardingEmailQueue)(newUser.email, UUID[0], UUID[4], newUser.name);
-            yield (0, Workers_1.addEmailVerificationQueue)(newUser.email, redirectdLink, newUser.name);
+            // await addOnBoardingEmailQueue(newUser.email ,password ,  UUID[4] , newUser.name)
+            yield (0, Workers_1.addEmailVerificationQueue)(newUser.email, otp, newUser.name);
             yield newUser.save();
             yield newStudent.save();
-            (0, Responses_1.ApiSuccessResponse)(res, 200, "Student Registration Success");
+            (0, Responses_1.ApiSuccessResponse)(res, 200, "OTP send to you email ");
         }
         catch (error) {
             if (error.code) {
@@ -66,8 +67,9 @@ exports.registerAStudent = (0, AsyncHandler_1.asyncHandler)((req, res, next) => 
 }));
 exports.StudentLogin = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
+        console.log("okay");
         const { email, password } = req.body;
-        const isStudentFound = yield User_Models_1.User.findOne({ $or: [{ email }, { userName: email }] }).select(" -sessionToken -refreshToken -forgotPasswordToken -forgotPasswordExpiry -emailVerificationToken -emailVerificationExpiry    ");
+        const isStudentFound = yield User_Models_1.User.findOne({ $or: [{ email }, { userName: email }] }).select("  -refreshToken -forgotPasswordToken -forgotPasswordExpiry -emailVerificationToken -emailVerificationExpiry    ");
         if (!isStudentFound) {
             throw new Responses_1.ApiErrorResponse(404, "No Student Found With this details");
         }
@@ -75,6 +77,9 @@ exports.StudentLogin = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __aw
             throw new Responses_1.ApiErrorResponse(400, "You are not able to login in student site");
         if (isStudentFound.isAccountBlocked) {
             throw new Responses_1.ApiErrorResponse(401, "Your Account is Blocked please contact our team");
+        }
+        if (isStudentFound.emailVerified == false) {
+            throw new Responses_1.ApiErrorResponse(403, "Please verify your email");
         }
         if (isStudentFound.isAccountFreez === true && isStudentFound.accountFreezTime > Date.now()) {
             throw new Responses_1.ApiErrorResponse(401, "Your account freezed try again 24 hours for security purpose ");
@@ -96,6 +101,15 @@ exports.StudentLogin = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __aw
         isStudentFound.refreshToken = refreshToken;
         isStudentFound.incorrectPasswordCounter = 5;
         yield isStudentFound.save({ validateBeforeSave: false });
+        const Details = {
+            name: isStudentFound.name,
+            email: isStudentFound.email,
+            userName: isStudentFound.userName,
+            phone: isStudentFound.phoneNumber,
+            role: isStudentFound.role,
+            accessToken: sessionToken,
+            refreshToken: refreshToken
+        };
         return res
             .cookie("accessToken", sessionToken, {
             httpOnly: true,
@@ -107,7 +121,7 @@ exports.StudentLogin = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __aw
             secure: true,
             sameSite: "none"
         })
-            .json(new Responses_1.ApiResponse(200, "Login successfully Done ", isStudentFound));
+            .json(new Responses_1.ApiResponse(200, "Login successfully Done ", Details));
     }
     catch (error) {
         next(error);
@@ -145,9 +159,25 @@ exports.checkReffralsUsers = (0, AsyncHandler_1.asyncHandler)((req, res, next) =
 // 1 limit 10 
 exports.showTeachers = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { limit = 10, page = 1 } = req.query;
-        if (typeof +limit !== "number" && typeof +page !== "number") {
-            throw new Responses_1.ApiErrorResponse(400, "Please provide the valid in number");
+        let { limit = 10, page = 1 } = req.query;
+        // if(typeof +limit !== "number" && typeof +page !== "number"){
+        //   page = 1
+        //   limit = 10
+        // }
+        // page <= 0 ? page = 1 : page
+        // limit <= 0 ? limit = 10 :limit
+        // redisConnection.expire("teachers" , 1)
+        const catchedValues = yield RedisConnection_1.redisConnection.get("teachers");
+        if (catchedValues) {
+            const jsonCatchedValue = JSON.parse(catchedValues);
+            try {
+                const filterdTeacherDetails = jsonCatchedValue.slice(+page - 1 * +limit, +page * +limit);
+                return (0, Responses_1.ApiSuccessResponse)(res, 200, "Teachers found from catched", filterdTeacherDetails);
+            }
+            catch (error) {
+                const filterdTeacherDetails = jsonCatchedValue.slice(1, 10);
+                return (0, Responses_1.ApiSuccessResponse)(res, 200, "Teachers found from catched", JSON.parse(filterdTeacherDetails));
+            }
         }
         const Teachers = yield Teacher_Models_1.Teacher.aggregate([
             {
@@ -172,10 +202,12 @@ exports.showTeachers = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __aw
             },
             {
                 $addFields: {
-                    TeacherInfo: { $first: "$Teachers" }
+                    Teachers: { $first: "$Teachers" }
                 }
             }
-        ]).skip((+page - 1) * (+limit)).limit(+limit);
+        ]);
+        RedisConnection_1.redisConnection.set("teachers", JSON.stringify(Teachers));
+        RedisConnection_1.redisConnection.expire("teachers", 24 * 60 * 1000);
         if (Teachers.length === 0) {
             throw new Responses_1.ApiErrorResponse(404, "No Teacher Found");
         }
@@ -237,7 +269,7 @@ exports.searchTeacher = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __a
             },
             {
                 $addFields: {
-                    TeacherInfo: { $first: "$Teachers" }
+                    Teachers: { $first: "$Teachers" }
                 }
             }
         ]);

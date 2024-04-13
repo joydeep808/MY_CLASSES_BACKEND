@@ -56,7 +56,7 @@ const sendEmail = (email, subject, mailgenContent) => __awaiter(void 0, void 0, 
     }
 });
 exports.sendEmail = sendEmail;
-const WelcomeEmailSend = (name, userName, password) => {
+const WelcomeEmailSend = (name, userName) => {
     const websiteUrl = "https://www.myclassestripura.com";
     const websiteName = "MyClasses ";
     return {
@@ -71,7 +71,7 @@ const WelcomeEmailSend = (name, userName, password) => {
 
         <p style="font-size:16px;line-height:24px;margin:16px 0;color:#525f7f;text-align:left">Your userName <span style="color:#000000; font-size:16px">${userName}</span> </p>
 
-        <p style="font-size:16px;line-height:24px;margin:16px 0;color:#525f7f;text-align:left">And your password <span style="color:#000000; font-size:16px">${password}</span> </p>
+        
 
         <p style="font-size:16px;line-height:24px;margin:16px 0;color:#525f7f;text-align:left">You can access Your Account from The Website</p>
 
@@ -100,7 +100,7 @@ const WelcomeEmailSend = (name, userName, password) => {
     };
 };
 exports.WelcomeEmailSend = WelcomeEmailSend;
-const emailVerificationEmailProducer = (name, verificationLink) => {
+const emailVerificationEmailProducer = (name, Otp) => {
     const websiteName = "MyClassese  Tripura";
     return {
         body: {
@@ -112,7 +112,7 @@ const emailVerificationEmailProducer = (name, verificationLink) => {
 
         <p style="font-size:16px;line-height:24px;margin:16px 0;color:#525f7f;text-align:left">Please verify your email from the given link before expire </p>
 
-        <a href=${verificationLink} style="background-color:#656ee8;border-radius:5px;color:#fff;font-size:16px;font-weight:bold;text-decoration:none;text-align:center;display:inline-block;width:100%;padding:10px 10px 10px 10px;line-height:100%;max-width:100%" target="_blank"><span><!--[if mso]><i style="letter-spacing: 10px;mso-font-width:-100%;mso-text-raise:15" hidden>&nbsp;</i><![endif]--></span><span style="max-width:100%;display:inline-block;line-height:120%;mso-padding-alt:0px;mso-text-raise:7.5px">Verify Email</span><span><!--[if mso]><i style="letter-spacing: 10px;mso-font-width:-100%" hidden>&nbsp;</i><![endif]--></span></a>
+         <h1 style="background-color:#656ee8;border-radius:5px;color:#fff;font-size:16px;font-weight:bold;text-decoration:none;text-align:center;display:inline-block;width:100%;padding:10px 10px 10px 10px;line-height:100%;max-width:100%" ><span><!--[if mso]><i style="letter-spacing: 10px;mso-font-width:-100%;mso-text-raise:15" hidden>&nbsp;</i><![endif]--></span><span style="max-width:100%;display:inline-block;line-height:120%;mso-padding-alt:0px;mso-text-raise:7.5px">OTP ${Otp}</span><span><!--[if mso]><i style="letter-spacing: 10px;mso-font-width:-100%" hidden>&nbsp;</i><![endif]--></span></h1>
 
         <hr style="width:100%;border:none;border-top:1px solid #eaeaea;border-color:#e6ebf1;margin:20px 0" />
 
@@ -125,8 +125,8 @@ const emailVerificationEmailProducer = (name, verificationLink) => {
         <p style="font-size:12px;line-height:16px;margin:16px 0;color:#8898aa">${websiteName} Agartala Tripura West </p>`,
                 button: {
                     color: "#525f7f", // Optional action button color
-                    text: "Verify Now ",
-                    link: verificationLink
+                    text: "Go to website",
+                    link: "www.myclassestripura.com"
                 },
                 outro: "Need help, or have questions? Just reply to this email, we'd love to help.",
             },
@@ -144,9 +144,9 @@ const passwordResetEmail = (name, resetLink) => {
                 instructions: ` <hr style="width:100%;border:none;border-top:1px solid #eaeaea;border-color:#e6ebf1;margin:20px 0" />
         <p style="font-size:16px;line-height:24px;margin:16px 0;color:#525f7f;text-align:left">Thanks you for using our services </p>
 
-        <p style="font-size:16px;line-height:24px;margin:16px 0;color:#525f7f;text-align:left">Please reset your password in link below</p>
+        <p style="font-size:16px;line-height:24px;margin:16px 0;color:#525f7f;text-align:left">Please reset your password </p>
 
-        <a href=${resetLink} style="background-color:#656ee8;border-radius:5px;color:#fff;font-size:16px;font-weight:bold;text-decoration:none;text-align:center;display:inline-block;width:100%;padding:10px 10px 10px 10px;line-height:100%;max-width:100%" target="_blank"><span><!--[if mso]><i style="letter-spacing: 10px;mso-font-width:-100%;mso-text-raise:15" hidden>&nbsp;</i><![endif]--></span><span style="max-width:100%;display:inline-block;line-height:120%;mso-padding-alt:0px;mso-text-raise:7.5px">Reset Your Password</span><span><!--[if mso]><i style="letter-spacing: 10px;mso-font-width:-100%" hidden>&nbsp;</i><![endif]--></span></a>
+        <h1 style="background-color:#656ee8;border-radius:5px;color:#fff;font-size:16px;font-weight:bold;text-decoration:none;text-align:center;display:inline-block;width:100%;padding:10px 10px 10px 10px;line-height:100%;max-width:100%"><span><!--[if mso]><i style="letter-spacing: 10px;mso-font-width:-100%;mso-text-raise:15" hidden>&nbsp;</i><![endif]--></span><span style="max-width:100%;display:inline-block;line-height:120%;mso-padding-alt:0px;mso-text-raise:7.5px"> OPT ${resetLink}</span><span><!--[if mso]><i style="letter-spacing: 10px;mso-font-width:-100%" hidden>&nbsp;</i><![endif]--></span></h1>
 
         <hr style="width:100%;border:none;border-top:1px solid #eaeaea;border-color:#e6ebf1;margin:20px 0" />
 
@@ -159,8 +159,8 @@ const passwordResetEmail = (name, resetLink) => {
         <p style="font-size:12px;line-height:16px;margin:16px 0;color:#8898aa">${websiteName} Agartala Tripura West </p>`,
                 button: {
                     color: "#525f7f", // Optional action button color
-                    text: "Reset now",
-                    link: resetLink
+                    text: "Go to website",
+                    link: "www.myclassestripura.com"
                 },
                 outro: "Need help, or have questions? Just reply to this email, we'd love to help.",
             },

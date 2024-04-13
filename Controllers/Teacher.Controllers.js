@@ -12,26 +12,32 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.addCoverImage = exports.TeacherLogin = exports.updateDetailsTeacher = exports.checkStudentEnroll = exports.RegisterTeacher = void 0;
+exports.removeCoverImages = exports.addCoverImages = exports.TeacherLogin = exports.updateDetailsTeacher = exports.checkStudentEnroll = exports.RegisterTeacher = void 0;
 const Teacher_Models_1 = require("../Models/Teacher.Models");
 const Utilities_1 = require("../Utilities");
 const AsyncHandler_1 = require("../Utilities/AsyncHandler");
-const crypto_1 = __importDefault(require("crypto"));
 const Responses_1 = require("../Utilities/Responses");
 const User_Models_1 = require("../Models/User.Models");
+const Workers_1 = require("../Utilities/Workers");
+const Multer_Middleware_1 = require("../Middleware/Multer.Middleware");
+const fs_1 = __importDefault(require("fs"));
 exports.RegisterTeacher = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { email, completeAddress, description, locality, phone, qualification, subjectTeaching, name } = req.body;
+        const { email, completeAddress, description, locality, phone, qualification, subjectTeaching, name, password } = req.body;
         try {
-            const UUID = crypto_1.default.randomUUID().split("-");
-            const password = yield (0, Utilities_1.hashPassword)(UUID[0]);
+            const UUID = yield (0, Utilities_1.generateRandomNumbers)(3);
+            const UniqueUTeacherID = `MY${phone.slice(6, 10)}${UUID}`;
+            const hashedPassword = yield (0, Utilities_1.hashPassword)(password);
+            const { otp, tokenExpiry } = yield (0, Utilities_1.generateVerificationTokens)();
             const newUser = yield User_Models_1.User.create({
                 name,
-                userName: UUID[4],
-                password,
+                userName: UniqueUTeacherID,
+                password: hashedPassword,
                 email,
                 phoneNumber: phone,
-                role: "TEACHER"
+                role: "TEACHER",
+                emailVerificationExpiry: tokenExpiry,
+                EmailOtp: otp,
             });
             const newTeacher = yield Teacher_Models_1.Teacher.create({
                 teacherId: newUser.userName,
@@ -43,7 +49,8 @@ exports.RegisterTeacher = (0, AsyncHandler_1.asyncHandler)((req, res, next) => _
             });
             yield newUser.save();
             yield newTeacher.save();
-            (0, Responses_1.ApiSuccessResponse)(res, 200, "Signup successfully done wait for 48-72 hours to verify");
+            yield (0, Workers_1.addEmailVerificationQueue)(newUser.email, otp, newUser.name);
+            (0, Responses_1.ApiSuccessResponse)(res, 200, "OTP send in your email ");
         }
         catch (error) {
             if (error.keyValue.email) {
@@ -58,8 +65,8 @@ exports.RegisterTeacher = (0, AsyncHandler_1.asyncHandler)((req, res, next) => _
 }));
 exports.checkStudentEnroll = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const teacher = req.user;
-        const EnrollStudents = yield Teacher_Models_1.Admission.find({ $and: [{ teacher: teacher.userName }, { status: "DONE" }] });
+        const teacher = req.teacher;
+        const EnrollStudents = yield Teacher_Models_1.Admission.find({ $and: [{ teacher: teacher.teacherId }, { status: "DONE" }] });
         if (EnrollStudents.length === 0)
             throw new Responses_1.ApiErrorResponse(404, "No enroll students found ");
         (0, Responses_1.ApiSuccessResponse)(res, 200, "Successfully found", EnrollStudents);
@@ -92,45 +99,107 @@ exports.updateDetailsTeacher = (0, AsyncHandler_1.asyncHandler)((req, res, next)
 exports.TeacherLogin = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { email, password } = req.body;
-        const isTeacher = yield User_Models_1.User.findOne({ $or: [{ email }, { userName: email }] }).select(" -sessionToken -refreshToken -forgotPasswordToken -forgotPasswordExpiry -emailVerificationToken -emailVerificationExpiry    ");
-        if (!isTeacher) {
+        const isTeacherFound = yield User_Models_1.User.findOne({ $or: [{ email }, { userName: email }] }).select(" -sessionToken -refreshToken -forgotPasswordToken -forgotPasswordExpiry -emailVerificationToken -emailVerificationExpiry");
+        if (!isTeacherFound) {
             throw new Responses_1.ApiErrorResponse(404, "Teacher not found with this details");
         }
-        if (isTeacher.role !== "TEACHER")
+        if (isTeacherFound.role !== "TEACHER")
             throw new Responses_1.ApiErrorResponse(400, "You are not able to login in student site");
-        if (isTeacher.isAccountBlocked) {
+        if (isTeacherFound.isAccountBlocked) {
             throw new Responses_1.ApiErrorResponse(401, "Your Account is Blocked please contact our team");
         }
-        if (isTeacher.isAccountFreez === true && isTeacher.accountFreezTime > Date.now()) {
+        if (isTeacherFound.isAccountFreez === true && isTeacherFound.accountFreezTime > Date.now()) {
             throw new Responses_1.ApiErrorResponse(401, "Your account freezed try again 24 hours for security purpose ");
         }
-        const isPasswordValid = yield (0, Utilities_1.isValidPassword)(password, isTeacher.password);
+        const isPasswordValid = yield (0, Utilities_1.isValidPassword)(password, isTeacherFound.password);
         if (!isPasswordValid) {
-            if (isTeacher.incorrectPasswordCounter === 0) {
-                isTeacher.isAccountFreez = true;
-                yield isTeacher.save({ validateBeforeSave: false });
+            if (isTeacherFound.incorrectPasswordCounter === 0) {
+                isTeacherFound.isAccountFreez = true;
+                yield isTeacherFound.save({ validateBeforeSave: false });
                 throw new Responses_1.ApiErrorResponse(400, "Your account is freez due to multiple incorrect password tries");
             }
-            if (isTeacher.incorrectPasswordCounter > 0) {
-                isTeacher.incorrectPasswordCounter -= 1;
-                yield isTeacher.save({ validateBeforeSave: false });
-                throw new Responses_1.ApiErrorResponse(400, `Your Password is incorrect ${isTeacher.incorrectPasswordCounter} tries left`);
+            if (isTeacherFound.incorrectPasswordCounter > 0) {
+                isTeacherFound.incorrectPasswordCounter -= 1;
+                yield isTeacherFound.save({ validateBeforeSave: false });
+                throw new Responses_1.ApiErrorResponse(400, `Your Password is incorrect ${isTeacherFound.incorrectPasswordCounter} tries left`);
             }
         }
-        const { refreshToken, sessionToken } = yield (0, Utilities_1.generateSessionTokens)(isTeacher);
-        isTeacher.refreshToken = refreshToken;
-        isTeacher.incorrectPasswordCounter = 5;
-        yield isTeacher.save({ validateBeforeSave: false });
+        const { refreshToken, sessionToken } = yield (0, Utilities_1.generateSessionTokens)(isTeacherFound);
+        isTeacherFound.refreshToken = refreshToken;
+        isTeacherFound.incorrectPasswordCounter = 5;
+        yield isTeacherFound.save({ validateBeforeSave: false });
+        const teacherDetails = {
+            name: isTeacherFound.name,
+            email: isTeacherFound.email,
+            userName: isTeacherFound.userName,
+            phone: isTeacherFound.phoneNumber,
+        };
         return res
             .cookie("accessToken", sessionToken)
             .cookie("refreshToken", refreshToken)
-            .json(new Responses_1.ApiResponse(200, "Login successfully Done ", isTeacher));
+            .json(new Responses_1.ApiResponse(200, "Login successfully Done ", teacherDetails));
     }
     catch (error) {
         next(error);
     }
 }));
-exports.addCoverImage = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const teacher = req.user;
+exports.addCoverImages = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const teacher = req.teacher;
+        if (!Array.isArray(req.files)) {
+            throw new Responses_1.ApiErrorResponse(400, "Please provide atleast 1 picture");
+        }
+        if (teacher.coverImage.length >= 10) {
+            yield Promise.resolve(req.files.map(item => {
+                fs_1.default.unlinkSync(item.path);
+            }));
+            throw new Responses_1.ApiErrorResponse(200, "You are not able to add cover image because 10 image already added");
+        }
+        if (teacher.coverImage.length + req.files.length > 10) {
+            throw new Responses_1.ApiErrorResponse(400, `Only ${10 - req.files.length} images you can able to add`);
+        }
+        if (req.files.length === 0) {
+            throw new Responses_1.ApiErrorResponse(400, "Please provide atleast 1 picture");
+        }
+        yield Promise.resolve(req.files.map((item, index) => __awaiter(void 0, void 0, void 0, function* () {
+            const filePath = yield (0, Multer_Middleware_1.getStaticFilePath)(req, item.filename);
+            if (filePath !== null) {
+                teacher.coverImage.push(filePath);
+            }
+        })));
+        yield teacher.save({ validateBeforeSave: false });
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "Cover image successfully done!");
+    }
+    catch (error) {
+        next(error);
+    }
 }));
-const monthlyPayment = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () { }));
+exports.removeCoverImages = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const Teacher = req.teacher;
+        const { imagesLink } = req.body;
+        if (imagesLink.length === 0) {
+            throw new Responses_1.ApiErrorResponse(400, "Please provide atleast 1 value");
+        }
+        let removePhotoarr = [];
+        yield Promise.resolve(imagesLink.map((item) => __awaiter(void 0, void 0, void 0, function* () {
+            if (Teacher.coverImage.includes(item)) {
+                Teacher.coverImage = Teacher.coverImage.filter(image => image !== item);
+                removePhotoarr.push(item);
+            }
+        })));
+        if (removePhotoarr.length === 0) {
+            throw new Responses_1.ApiErrorResponse(400, "Please provide valid image name");
+        }
+        yield Teacher.save({ validateBeforeSave: false });
+        removePhotoarr.map(item => {
+            fs_1.default.unlinkSync(item);
+        });
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "Successsfully Removed cover images");
+    }
+    catch (error) {
+        next(error);
+    }
+}));
+const monthlyPayment = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+}));

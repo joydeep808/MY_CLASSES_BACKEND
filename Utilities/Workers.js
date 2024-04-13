@@ -38,22 +38,21 @@ const resetPasswordEmailQueue = new bullmq_1.Queue("reset_password_queue", {
         password: options.password
     },
 });
-function addOnBoardingEmailQueue(email, password, userName, name) {
+function addOnBoardingEmailQueue(email, userName, name) {
     return __awaiter(this, void 0, void 0, function* () {
         yield onboardEmailQueue.add("sendEmail", {
             email,
-            password,
             userName,
             name
         });
     });
 }
 exports.addOnBoardingEmailQueue = addOnBoardingEmailQueue;
-function addEmailVerificationQueue(email, redirectLink, name) {
+function addEmailVerificationQueue(email, otp, name) {
     return __awaiter(this, void 0, void 0, function* () {
         yield verificationEmailQueue.add("emailVerification", {
             email,
-            redirectLink,
+            otp,
             name,
         });
     });
@@ -70,7 +69,7 @@ function addResetPasswordEmailQueue(email, redirectLink, name) {
 }
 exports.addResetPasswordEmailQueue = addResetPasswordEmailQueue;
 new bullmq_1.Worker("email_queue", (job) => __awaiter(void 0, void 0, void 0, function* () {
-    yield (0, SendMail_1.sendEmail)(job.data.email, "Welcome", (0, SendMail_1.WelcomeEmailSend)(job.data.name, job.data.userName, job.data.password));
+    yield (0, SendMail_1.sendEmail)(job.data.email, "Welcome", (0, SendMail_1.WelcomeEmailSend)(job.data.name, job.data.userName));
 }), {
     connection: {
         host: options.host,
@@ -79,7 +78,7 @@ new bullmq_1.Worker("email_queue", (job) => __awaiter(void 0, void 0, void 0, fu
     }
 });
 new bullmq_1.Worker("verification_email_queue", (job) => __awaiter(void 0, void 0, void 0, function* () {
-    yield (0, SendMail_1.sendEmail)(job.data.email, "Email Verification ", (0, SendMail_1.emailVerificationEmailProducer)(job.data.name, job.data.redirectLink));
+    yield (0, SendMail_1.sendEmail)(job.data.email, "Email Verification ", (0, SendMail_1.emailVerificationEmailProducer)(job.data.name, job.data.otp));
 }), {
     connection: {
         host: options.host,

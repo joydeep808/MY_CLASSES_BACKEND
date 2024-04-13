@@ -19,6 +19,9 @@ const UserSchema = new mongoose_1.Schema({
         required: true,
         index: true,
     },
+    avatar: {
+        type: String,
+    },
     password: {
         type: String,
         required: true
@@ -26,7 +29,6 @@ const UserSchema = new mongoose_1.Schema({
     emailVerified: {
         type: Boolean,
         default: false,
-        required: true,
     },
     phoneNumber: {
         type: Number,
@@ -39,7 +41,7 @@ const UserSchema = new mongoose_1.Schema({
     emailVerificationExpiry: {
         type: Number
     },
-    emailVerificationToken: {
+    EmailOtp: {
         type: String
     },
     forgotPasswordExpiry: {

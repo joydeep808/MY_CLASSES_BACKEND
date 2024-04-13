@@ -9,12 +9,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAllUnVerifyedTeacher = exports.totalStudentinWebsite = exports.totalTeacherRegisterd = exports.connectUserToTeacher = exports.setYoutubeVideoLink = exports.blockUser = exports.VerifyTeacher = exports.unverifiedTeachers = exports.RegisterAdmin = void 0;
+exports.addDemoVideo = exports.refreshTeacherDetails = exports.rejectTeacherAccount = exports.VerifyTeacher = exports.getAllUnVerifyedTeacher = exports.totalStudentinWebsite = exports.totalTeacherRegisterd = exports.connectUserToTeacher = exports.setYoutubeVideoLink = exports.blockUser = exports.unverifiedTeachers = exports.RegisterAdmin = void 0;
 const Teacher_Models_1 = require("../Models/Teacher.Models");
 const User_Models_1 = require("../Models/User.Models");
 const Utilities_1 = require("../Utilities");
 const AsyncHandler_1 = require("../Utilities/AsyncHandler");
 const Responses_1 = require("../Utilities/Responses");
+const RedisConnection_1 = require("../Redis/RedisConnection");
 exports.RegisterAdmin = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { email, name, phone } = req.body;
@@ -62,20 +63,6 @@ exports.unverifiedTeachers = (0, AsyncHandler_1.asyncHandler)((req, res, next) =
         if (allTeachers.length === 0)
             throw new Responses_1.ApiErrorResponse(404, "No Teacher is found");
         (0, Responses_1.ApiSuccessResponse)(res, 200, "Successfully Found ", allTeachers);
-    }
-    catch (error) {
-        next(error);
-    }
-}));
-exports.VerifyTeacher = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const { teacherId, status } = req.body;
-        if (status !== "SUCCESS")
-            throw new Responses_1.ApiErrorResponse(400, "Not valid paramiters");
-        const isTeacherUpdated = yield Teacher_Models_1.Teacher.findOneAndUpdate({ $and: [{ teacherId }] }, { $set: { status } }, { new: true });
-        if (!isTeacherUpdated)
-            throw new Responses_1.ApiErrorResponse(500, "Details not updated");
-        (0, Responses_1.ApiSuccessResponse)(res, 200, "Teacher verified successfully ");
     }
     catch (error) {
         next(error);
@@ -142,7 +129,14 @@ exports.getAllUnVerifyedTeacher = (0, AsyncHandler_1.asyncHandler)((req, res, ne
                     from: "users",
                     localField: "teacherId",
                     foreignField: "userName",
-                    as: "Teachers"
+                    as: "Teachers",
+                    pipeline: [
+                        {
+                            $match: {
+                                emailVerified: true
+                            }
+                        }
+                    ]
                 }
             },
             {
@@ -176,6 +170,85 @@ exports.getAllUnVerifyedTeacher = (0, AsyncHandler_1.asyncHandler)((req, res, ne
             throw new Responses_1.ApiErrorResponse(404, "No teacher found");
         }
         (0, Responses_1.ApiSuccessResponse)(res, 200, "found", exports.unverifiedTeachers);
+    }
+    catch (error) {
+        next(error);
+    }
+}));
+exports.VerifyTeacher = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { teacherId, status } = req.body;
+        if (status !== "SUCCESS")
+            throw new Responses_1.ApiErrorResponse(400, "Please ");
+        const isTeacherUpdated = yield Teacher_Models_1.Teacher.findOneAndUpdate({ $and: [{ teacherId }] }, { $set: { status } }, { new: true });
+        if (!isTeacherUpdated)
+            throw new Responses_1.ApiErrorResponse(500, "Details not updated");
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "Teacher verified successfully ");
+    }
+    catch (error) {
+        next(error);
+    }
+}));
+exports.rejectTeacherAccount = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { reason, teacherId } = req.body;
+        const FoundTeacher = yield Teacher_Models_1.Teacher.findOneAndUpdate({ teacherId }, { $set: { reason, status: "REJECTED" } }, { new: true });
+        if (!FoundTeacher) {
+            throw new Responses_1.ApiErrorResponse(404, "Teacher not found with this id");
+        }
+        return (0, Responses_1.ApiSuccessResponse)(res, 200, "Status updated successfully done");
+    }
+    catch (error) {
+        next(error);
+    }
+}));
+exports.refreshTeacherDetails = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const Teachers = yield Teacher_Models_1.Teacher.aggregate([
+            {
+                $match: {
+                    status: "SUCCESS",
+                },
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "teacherId",
+                    foreignField: "userName",
+                    as: "Teachers",
+                    pipeline: [
+                        {
+                            $project: {
+                                name: 1,
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                $addFields: {
+                    Teachers: { $first: "$Teachers" }
+                }
+            }
+        ]);
+        RedisConnection_1.redisConnection.set("teachers", JSON.stringify(Teachers));
+        RedisConnection_1.redisConnection.expire("teachers", 24 * 60 * 60 * 1000);
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "Successfully done ");
+    }
+    catch (error) {
+        next(error);
+    }
+}));
+exports.addDemoVideo = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { videoLink, teacherId } = req.body;
+        const FoundTeacher = yield Teacher_Models_1.Teacher.findOne({ teacherId });
+        if (!FoundTeacher) {
+            throw new Responses_1.ApiErrorResponse(404, "Teacher not found with this id");
+        }
+        FoundTeacher.videoLink.push = videoLink;
+        yield FoundTeacher.save({ validateBeforeSave: false });
+        return (0, Responses_1.ApiSuccessResponse)(res, 200, "Successfully added video");
     }
     catch (error) {
         next(error);
