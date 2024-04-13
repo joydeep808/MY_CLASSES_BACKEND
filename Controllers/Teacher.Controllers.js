@@ -23,7 +23,7 @@ const Multer_Middleware_1 = require("../Middleware/Multer.Middleware");
 const fs_1 = __importDefault(require("fs"));
 exports.RegisterTeacher = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { email, completeAddress, description, locality, phone, qualification, subjectTeaching, name, password } = req.body;
+        const { email, completeAddress, description, locality, phone, qualification, subjectTeaching, name, password, teacherSpecializeFor, teachingExperience } = req.body;
         try {
             const UUID = yield (0, Utilities_1.generateRandomNumbers)(3);
             const UniqueUTeacherID = `MY${phone.slice(6, 10)}${UUID}`;
@@ -38,7 +38,6 @@ exports.RegisterTeacher = (0, AsyncHandler_1.asyncHandler)((req, res, next) => _
                 role: "TEACHER",
                 emailVerificationExpiry: tokenExpiry,
                 EmailOtp: otp,
-                status: "SUCCESS"
             });
             const newTeacher = yield Teacher_Models_1.Teacher.create({
                 teacherId: newUser.userName,
@@ -46,7 +45,10 @@ exports.RegisterTeacher = (0, AsyncHandler_1.asyncHandler)((req, res, next) => _
                 description,
                 locality,
                 qualification,
-                subjectTeaching
+                subjectTeaching,
+                status: "SUCCESS",
+                teacherSpecializeFor,
+                teachingExperience,
             });
             yield newUser.save();
             yield newTeacher.save();

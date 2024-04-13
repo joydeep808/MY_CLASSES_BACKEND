@@ -49,6 +49,9 @@ const TeacherSchema = new mongoose_1.Schema({
     reason: {
         type: String,
     },
+    totalStudents: {
+        type: String
+    }
 }, {
     timestamps: true
 });
