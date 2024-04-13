@@ -38,6 +38,7 @@ exports.RegisterTeacher = (0, AsyncHandler_1.asyncHandler)((req, res, next) => _
                 role: "TEACHER",
                 emailVerificationExpiry: tokenExpiry,
                 EmailOtp: otp,
+                status: "SUCCESS"
             });
             const newTeacher = yield Teacher_Models_1.Teacher.create({
                 teacherId: newUser.userName,
