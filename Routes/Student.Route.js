@@ -18,4 +18,5 @@ Router.route("/showTeachers").get(Student_Controller_1.showTeachers);
 Router.route("/inquary/teacher").post(AuthCheck_Middleware_1.UserAuthCheck, Student_Controller_1.applyForTeacherInquary);
 Router.route("/search/teacher").get(Student_Controller_1.searchTeacher);
 Router.route("/applyed/teacher").get(AuthCheck_Middleware_1.UserAuthCheck, Student_Controller_1.studentInquiredForTeacher);
+Router.route("/search/subject/:subject").get(Student_Controller_1.getTeachersFromSubjects);
 exports.default = Router;

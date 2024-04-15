@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.demoClassBook = exports.studentInquiredForTeacher = exports.getTeacherByUsername = exports.searchTeacher = exports.applyForTeacherInquary = exports.showTeachers = exports.checkReffralsUsers = exports.StudentLogin = exports.registerAStudent = void 0;
+exports.demoClassBook = exports.studentInquiredForTeacher = exports.getTeachersFromSubjects = exports.getTeacherByUsername = exports.searchTeacher = exports.applyForTeacherInquary = exports.showTeachers = exports.checkReffralsUsers = exports.StudentLogin = exports.registerAStudent = void 0;
 const Student_Models_1 = require("../Models/Student.Models");
 const Utilities_1 = require("../Utilities");
 const AsyncHandler_1 = require("../Utilities/AsyncHandler");
@@ -160,13 +160,6 @@ exports.checkReffralsUsers = (0, AsyncHandler_1.asyncHandler)((req, res, next) =
 exports.showTeachers = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         let { limit = 10, page = 1 } = req.query;
-        // if(typeof +limit !== "number" && typeof +page !== "number"){
-        //   page = 1
-        //   limit = 10
-        // }
-        // page <= 0 ? page = 1 : page
-        // limit <= 0 ? limit = 10 :limit
-        // redisConnection.expire("teachers" , 1)
         const catchedValues = yield RedisConnection_1.redisConnection.get("teachers");
         if (catchedValues) {
             const jsonCatchedValue = JSON.parse(catchedValues);
@@ -176,7 +169,7 @@ exports.showTeachers = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __aw
             }
             catch (error) {
                 const filterdTeacherDetails = jsonCatchedValue.slice(1, 10);
-                return (0, Responses_1.ApiSuccessResponse)(res, 200, "Teachers found from catched", JSON.parse(filterdTeacherDetails));
+                return (0, Responses_1.ApiSuccessResponse)(res, 200, "Teachers found from catched", filterdTeacherDetails);
             }
         }
         const Teachers = yield Teacher_Models_1.Teacher.aggregate([
@@ -195,6 +188,8 @@ exports.showTeachers = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __aw
                         {
                             $project: {
                                 name: 1,
+                                email: 1,
+                                phoneNumber: 1,
                             }
                         }
                     ]
@@ -207,7 +202,7 @@ exports.showTeachers = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __aw
             }
         ]);
         RedisConnection_1.redisConnection.set("teachers", JSON.stringify(Teachers));
-        RedisConnection_1.redisConnection.expire("teachers", 24 * 60 * 1000);
+        RedisConnection_1.redisConnection.expire("teachers", 20 * 60 * 1000);
         if (Teachers.length === 0) {
             throw new Responses_1.ApiErrorResponse(404, "No Teacher Found");
         }
@@ -241,13 +236,14 @@ exports.applyForTeacherInquary = (0, AsyncHandler_1.asyncHandler)((req, res, nex
 exports.searchTeacher = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { quary } = req.query;
+        console.log(quary);
         if (!quary) {
             throw new Responses_1.ApiErrorResponse(400, "Please provide the valid quary");
         }
         const foundSearchTeacher = yield Teacher_Models_1.Teacher.aggregate([
             {
                 $match: {
-                    userName: { $regex: quary, $options: 'i' },
+                    teacherId: { $regex: quary, $options: 'i' },
                     locality: { $regex: quary, $options: 'i' },
                     status: "SUCCESS"
                 }
@@ -278,6 +274,7 @@ exports.searchTeacher = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __a
         (0, Responses_1.ApiSuccessResponse)(res, 200, "Teacher found Teacher ", foundSearchTeacher);
     }
     catch (error) {
+        console.log(error);
         next(error);
     }
 }));
@@ -317,6 +314,47 @@ exports.getTeacherByUsername = (0, AsyncHandler_1.asyncHandler)((req, res, next)
             throw new Responses_1.ApiErrorResponse(404, "Teacher not found with this userName");
         }
         (0, Responses_1.ApiSuccessResponse)(res, 200, "Successfully found the teacher", TeacherDetails);
+    }
+    catch (error) {
+        next(error);
+    }
+}));
+exports.getTeachersFromSubjects = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { subject } = req.params;
+        const TeacherDetails = yield Teacher_Models_1.Teacher.aggregate([
+            {
+                $match: {
+                    subjectTeaching: { $in: [subject] }
+                }
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "teacherId",
+                    foreignField: "userName",
+                    as: "Teachers",
+                    pipeline: [
+                        {
+                            $project: {
+                                name: 1,
+                                email: 1,
+                                phoneNumber: 1
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                $addFields: {
+                    Teachers: { $first: "$Teachers" }
+                }
+            }
+        ]);
+        if (TeacherDetails.length === 0) {
+            throw new Responses_1.ApiErrorResponse(404, "Teacher Not found with this category");
+        }
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "Teacher Found Successfully done!", TeacherDetails);
     }
     catch (error) {
         next(error);
