@@ -10,7 +10,6 @@ const Student_Controller_1 = require("../Controllers/Student.Controller");
 const AuthCheck_Middleware_1 = require("../Middleware/AuthCheck.Middleware");
 const Router = express_1.default.Router();
 Router.route("/register").post((0, Student_validator_1.RegisterStudentValidator)(), validate_1.validateErrors, Student_Controller_1.registerAStudent);
-Router.route("/verifyEmail");
 Router.route("/login").patch((0, Student_validator_1.StudentLoginValidator)(), validate_1.validateErrors, Student_Controller_1.StudentLogin);
 Router.route("/check/reffral").get(AuthCheck_Middleware_1.UserAuthCheck, Student_Controller_1.checkReffralsUsers);
 Router.route("/get/teacher/:userName").get(Student_Controller_1.getTeacherByUsername);

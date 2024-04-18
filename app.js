@@ -51,7 +51,7 @@ const Auth_Controller_1 = require("./Controllers/Auth.Controller");
 exports.App.get("/tokens", Auth_Controller_1.generateTokens);
 exports.App.get("/health", (req, res) => {
     console.log(req.ip);
-    (0, Responses_1.ApiSuccessResponse)(res, 200, "Everything looks fine");
+    return (0, Responses_1.ApiSuccessResponse)(res, 200, "Everything looks fine");
 });
 exports.App.use("/api/v1/user", User_Routes_1.default);
 exports.App.use("/api/v1/student", Student_Route_1.default);

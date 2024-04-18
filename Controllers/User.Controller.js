@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.setNewAvatar = exports.getNewAccessToken = exports.changePasswordFromEmailOTP = exports.generatePasswordResetTokens = exports.changeUserEmail = exports.forgotPasswordDirectly = exports.updateDetails = exports.generateResendOTP = exports.verifyEmail = exports.logoutUser = void 0;
+exports.removeUserProfilePicture = exports.setNewAvatar = exports.getNewAccessToken = exports.changePasswordFromEmailOTP = exports.generatePasswordResetTokens = exports.changeUserEmail = exports.forgotPasswordDirectly = exports.updateDetails = exports.generateResendOTP = exports.verifyEmail = exports.logoutUser = void 0;
 const Student_Models_1 = require("../Models/Student.Models");
 const Utilities_1 = require("../Utilities");
 const AsyncHandler_1 = require("../Utilities/AsyncHandler");
@@ -21,6 +21,7 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const User_Models_1 = require("../Models/User.Models");
 const Multer_Middleware_1 = require("../Middleware/Multer.Middleware");
 const Workers_1 = require("../Utilities/Workers");
+const fs_1 = require("fs");
 exports.logoutUser = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const student = req.user;
@@ -63,7 +64,7 @@ exports.verifyEmail = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awa
         FoundEmail.incorrectPasswordCounter = 5;
         FoundEmail.save({ validateBeforeSave: false });
         yield (0, Workers_1.addOnBoardingEmailQueue)(FoundEmail.email, FoundEmail.userName, FoundEmail.name);
-        (0, Responses_1.ApiSuccessResponse)(res, 200, "Email successfully verifyed", FoundEmail);
+        return (0, Responses_1.ApiSuccessResponse)(res, 200, "Email successfully verifyed", FoundEmail);
     }
     catch (error) {
         next(error);
@@ -86,7 +87,7 @@ exports.generateResendOTP = (0, AsyncHandler_1.asyncHandler)((req, res, next) =>
             FoundUser.emailVerificationExpiry = tokenExpiry;
             FoundUser.save({ validateBeforeSave: false });
             yield (0, Workers_1.addEmailVerificationQueue)(FoundUser.email, otp, FoundUser.name);
-            (0, Responses_1.ApiSuccessResponse)(res, 200, "OTP send ");
+            return (0, Responses_1.ApiSuccessResponse)(res, 200, "OTP send ");
         }
         if (FoundUser.incorrectPasswordCounter === 0) {
             throw new Responses_1.ApiErrorResponse(403, "You have reached your otp tries limit try again 24 hours");
@@ -109,7 +110,7 @@ exports.updateDetails = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __a
         name && (student.name = name);
         currentClass && (studentDetails.currentClass = currentClass);
         yield student.save({ validateBeforeSave: false });
-        (0, Responses_1.ApiSuccessResponse)(res, 200, "Update changes successfully done!");
+        return (0, Responses_1.ApiSuccessResponse)(res, 200, "Update changes successfully done!");
     }
     catch (error) {
         next(error);
@@ -139,7 +140,7 @@ exports.forgotPasswordDirectly = (0, AsyncHandler_1.asyncHandler)((req, res, nex
         student.password = password;
         student.incorrectPasswordCounter = 5;
         yield student.save({ validateBeforeSave: false });
-        (0, Responses_1.ApiSuccessResponse)(res, 200, "Password changed successfully done ");
+        return (0, Responses_1.ApiSuccessResponse)(res, 200, "Password changed successfully done ");
     }
     catch (error) {
         next(error);
@@ -162,7 +163,7 @@ exports.changeUserEmail = (0, AsyncHandler_1.asyncHandler)((req, res, next) => _
         }
         user.email = newEmail;
         yield user.save({ validateBeforeSave: false });
-        (0, Responses_1.ApiSuccessResponse)(res, 200, "Successfully Email Changed ");
+        return (0, Responses_1.ApiSuccessResponse)(res, 200, "Successfully Email Changed ");
     }
     catch (error) {
         next(error);
@@ -183,7 +184,7 @@ exports.generatePasswordResetTokens = (0, AsyncHandler_1.asyncHandler)((req, res
         isUserFound.forgotPasswordExpiry = tokenExpiry;
         yield isUserFound.save({ validateBeforeSave: false });
         yield (0, Workers_1.addResetPasswordEmailQueue)(email, otp, isUserFound.name);
-        (0, Responses_1.ApiSuccessResponse)(res, 200, "Email send please check and reset your password");
+        return (0, Responses_1.ApiSuccessResponse)(res, 200, "Email send please check and reset your password");
     }
     catch (error) {
         next(error);
@@ -215,7 +216,7 @@ exports.changePasswordFromEmailOTP = (0, AsyncHandler_1.asyncHandler)((req, res,
         isUserFound.password = hashedPassword;
         isUserFound.forgotPasswordToken = "";
         yield isUserFound.save({ validateBeforeSave: false });
-        (0, Responses_1.ApiSuccessResponse)(res, 200, "Successfully reset your password");
+        return (0, Responses_1.ApiSuccessResponse)(res, 200, "Successfully reset your password");
     }
     catch (error) {
         next(error);
@@ -259,9 +260,31 @@ exports.setNewAvatar = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __aw
         if (!filePath) {
             throw new Responses_1.ApiErrorResponse(404, "File not found");
         }
+        if (!user.avatar) {
+            user.avatar = filePath;
+            yield user.save({ validateBeforeSave: false });
+            return (0, Responses_1.ApiSuccessResponse)(res, 200, "Avatar set successfully ");
+        }
+        const isFileRemoved = yield (0, Utilities_1.extractTheUrlPath)(user.avatar);
+        if (isFileRemoved === false) {
+            (0, fs_1.unlinkSync)("Public" + filePath);
+        }
         user.avatar = filePath;
         yield user.save({ validateBeforeSave: false });
-        (0, Responses_1.ApiSuccessResponse)(res, 200, "Avatar set successfully ");
+        return (0, Responses_1.ApiSuccessResponse)(res, 200, "New Profile set");
+    }
+    catch (error) {
+        next(error);
+    }
+}));
+exports.removeUserProfilePicture = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const user = req.user;
+        if (!user.avatar)
+            throw new Responses_1.ApiErrorResponse(400, "You havn't set profile yet");
+        user.avatar = "";
+        yield user.save({ validateBeforeSave: false });
+        return (0, Responses_1.ApiSuccessResponse)(res, 200, "Successsfully removed profile");
     }
     catch (error) {
         next(error);

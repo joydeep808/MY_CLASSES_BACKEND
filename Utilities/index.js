@@ -12,10 +12,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.unhashedToHashed = exports.generateVerificationTokens = exports.generateRandomNumbers = exports.generateAccessToken = exports.generateSessionTokens = exports.isValidPassword = exports.hashPassword = void 0;
+exports.extractTheUrlPath = exports.unhashedToHashed = exports.generateVerificationTokens = exports.generateRandomNumbers = exports.generateAccessToken = exports.generateSessionTokens = exports.isValidPassword = exports.hashPassword = void 0;
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const crypto_1 = __importDefault(require("crypto"));
+const fs_1 = __importDefault(require("fs"));
 const hashPassword = (password) => __awaiter(void 0, void 0, void 0, function* () {
     return bcrypt_1.default.hashSync(password, 10);
 });
@@ -54,3 +55,23 @@ const unhashedToHashed = (unhashedToken) => __awaiter(void 0, void 0, void 0, fu
     return hashedToken;
 });
 exports.unhashedToHashed = unhashedToHashed;
+const extractTheUrlPath = (fullPath) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        if (!fullPath) {
+            return false;
+        }
+        ;
+        const avatar = fullPath.split("/");
+        const finalPath = avatar.at(-1);
+        if (!finalPath) {
+            return false;
+        }
+        ;
+        fs_1.default.unlinkSync("Public/" + finalPath);
+        return true;
+    }
+    catch (error) {
+        return false;
+    }
+});
+exports.extractTheUrlPath = extractTheUrlPath;
