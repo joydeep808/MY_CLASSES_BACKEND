@@ -77,7 +77,7 @@ exports.blockUser = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __await
         const isUserBlocked = yield User_Models_1.User.findOneAndUpdate({ userName: userId }, { $set: { isAccountBlocked: true } }, { new: true });
         if (!isUserBlocked)
             throw new Responses_1.ApiErrorResponse(404, "User not found to block");
-        return (0, Responses_1.ApiSuccessResponse)(res, 200, "Successfully blocked a user ");
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "Successfully blocked a user ");
     }
     catch (error) {
         next(error);
@@ -94,7 +94,7 @@ exports.totalTeacherRegisterd = (0, AsyncHandler_1.asyncHandler)((req, res, next
         const totalTeacher = yield Teacher_Models_1.Teacher.find({ status: "SUCCESS" });
         if (totalTeacher.length === 0)
             throw new Responses_1.ApiErrorResponse(404, "No teacher found ");
-        return (0, Responses_1.ApiSuccessResponse)(res, 200, "found", totalTeacher.length);
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "found", totalTeacher.length);
     }
     catch (error) {
         next(error);
@@ -105,7 +105,7 @@ exports.totalStudentinWebsite = (0, AsyncHandler_1.asyncHandler)((req, res, next
         const totalStudents = yield User_Models_1.User.find({ role: "STUDENT" });
         if (totalStudents.length === 0)
             throw new Responses_1.ApiErrorResponse(404, "No Student found in our website");
-        return (0, Responses_1.ApiSuccessResponse)(res, 200, "found", totalStudents.length);
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "found", totalStudents.length);
     }
     catch (error) {
         next(error);
@@ -169,7 +169,7 @@ exports.getAllUnVerifyedTeacher = (0, AsyncHandler_1.asyncHandler)((req, res, ne
         if (unverifyedTeachers.length === 0) {
             throw new Responses_1.ApiErrorResponse(404, "No teacher found");
         }
-        return (0, Responses_1.ApiSuccessResponse)(res, 200, "found", exports.unverifiedTeachers);
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "found", exports.unverifiedTeachers);
     }
     catch (error) {
         next(error);
@@ -183,7 +183,7 @@ exports.VerifyTeacher = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __a
         const isTeacherUpdated = yield Teacher_Models_1.Teacher.findOneAndUpdate({ $and: [{ teacherId }] }, { $set: { status } }, { new: true });
         if (!isTeacherUpdated)
             throw new Responses_1.ApiErrorResponse(500, "Details not updated");
-        return (0, Responses_1.ApiSuccessResponse)(res, 200, "Teacher verified successfully ");
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "Teacher verified successfully ");
     }
     catch (error) {
         next(error);
@@ -196,7 +196,7 @@ exports.rejectTeacherAccount = (0, AsyncHandler_1.asyncHandler)((req, res, next)
         if (!FoundTeacher) {
             throw new Responses_1.ApiErrorResponse(404, "Teacher not found with this id");
         }
-        return (0, Responses_1.ApiSuccessResponse)(res, 200, "Status updated successfully done");
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "Status updated successfully done");
     }
     catch (error) {
         next(error);
@@ -233,7 +233,7 @@ exports.refreshTeacherDetails = (0, AsyncHandler_1.asyncHandler)((req, res, next
         ]);
         RedisConnection_1.redisConnection.set("teachers", JSON.stringify(Teachers));
         RedisConnection_1.redisConnection.expire("teachers", 24 * 60 * 60 * 1000);
-        return (0, Responses_1.ApiSuccessResponse)(res, 200, "Successfully done ");
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "Successfully done ");
     }
     catch (error) {
         next(error);

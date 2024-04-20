@@ -47,9 +47,8 @@ const Student_Route_1 = __importDefault(require("./Routes/Student.Route"));
 const Admin_Routes_1 = __importDefault(require("./Routes/Admin.Routes"));
 const Teacher_Routes_1 = __importDefault(require("./Routes/Teacher.Routes"));
 const mongoose_1 = __importDefault(require("mongoose"));
-const Auth_Controller_1 = require("./Controllers/Auth.Controller");
-exports.App.get("/tokens", Auth_Controller_1.generateTokens);
-exports.App.get("/health", (req, res) => {
+// App.get("/tokens" , generateTokens)
+exports.App.get("/", (req, res) => {
     console.log(req.ip);
     return (0, Responses_1.ApiSuccessResponse)(res, 200, "Everything looks fine");
 });

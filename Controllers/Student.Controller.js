@@ -49,7 +49,7 @@ exports.registerAStudent = (0, AsyncHandler_1.asyncHandler)((req, res, next) => 
             yield (0, Workers_1.addEmailVerificationQueue)(newUser.email, otp, newUser.name);
             yield newUser.save();
             yield newStudent.save();
-            return (0, Responses_1.ApiSuccessResponse)(res, 200, "OTP send to you email ");
+            (0, Responses_1.ApiSuccessResponse)(res, 200, "OTP send to you email ");
         }
         catch (error) {
             if (error.code) {
@@ -138,7 +138,7 @@ exports.StudentLogin = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __aw
 //      currentClass:student.currentClass,
 //      phoneNunber:student.phoneNunber,
 //    }
-//    return ApiSuccessResponse(res , 200 , "Successfully Fetch user details" , selectedOptions)
+//    ApiSuccessResponse(res , 200 , "Successfully Fetch user details" , selectedOptions)
 //  } catch (error) {
 //   next(error)
 //  }
@@ -150,7 +150,7 @@ exports.checkReffralsUsers = (0, AsyncHandler_1.asyncHandler)((req, res, next) =
         if (reffralUsers.length === 0) {
             throw new Responses_1.ApiErrorResponse(404, "You haven't reffered any people");
         }
-        return (0, Responses_1.ApiSuccessResponse)(res, 200, "Successfully Found", reffralUsers);
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "Successfully Found", reffralUsers);
     }
     catch (error) {
         next(error);
@@ -166,11 +166,11 @@ exports.showTeachers = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __aw
             const jsonCatchedValue = JSON.parse(catchedValues);
             try {
                 const filterdTeacherDetails = jsonCatchedValue.slice(+page - 1 * +limit, +page * +limit);
-                return (0, Responses_1.ApiSuccessResponse)(res, 200, "Teachers found from catched", filterdTeacherDetails);
+                (0, Responses_1.ApiSuccessResponse)(res, 200, "Teachers found from catched", filterdTeacherDetails);
             }
             catch (error) {
                 const filterdTeacherDetails = jsonCatchedValue.slice(1, 10);
-                return (0, Responses_1.ApiSuccessResponse)(res, 200, "Teachers found from catched", filterdTeacherDetails);
+                (0, Responses_1.ApiSuccessResponse)(res, 200, "Teachers found from catched", filterdTeacherDetails);
             }
         }
         const Teachers = yield Teacher_Models_1.Teacher.aggregate([
@@ -207,9 +207,10 @@ exports.showTeachers = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __aw
         if (Teachers.length === 0) {
             throw new Responses_1.ApiErrorResponse(404, "No Teacher Found");
         }
-        return (0, Responses_1.ApiSuccessResponse)(res, 200, "Teacher Found", Teachers);
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "Teacher Found", Teachers);
     }
     catch (error) {
+        throw new Error(error);
         next(error);
     }
 }));
@@ -228,7 +229,7 @@ exports.applyForTeacherInquary = (0, AsyncHandler_1.asyncHandler)((req, res, nex
             teacher: isTeacherFound.teacherId
         });
         yield newInquary.save();
-        return (0, Responses_1.ApiSuccessResponse)(res, 200, "Successfully Quary Submited");
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "Successfully Quary Submited");
     }
     catch (error) {
         next(error);
@@ -272,7 +273,7 @@ exports.searchTeacher = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __a
         ]);
         if (foundSearchTeacher.length === 0)
             throw new Responses_1.ApiErrorResponse(404, "No Teacher Found ");
-        return (0, Responses_1.ApiSuccessResponse)(res, 200, "Teacher found Teacher ", foundSearchTeacher);
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "Teacher found Teacher ", foundSearchTeacher);
     }
     catch (error) {
         console.log(error);
@@ -314,7 +315,7 @@ exports.getTeacherByUsername = (0, AsyncHandler_1.asyncHandler)((req, res, next)
         if (TeacherDetails.length === 0) {
             throw new Responses_1.ApiErrorResponse(404, "Teacher not found with this userName");
         }
-        return (0, Responses_1.ApiSuccessResponse)(res, 200, "Successfully found the teacher", TeacherDetails);
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "Successfully found the teacher", TeacherDetails);
     }
     catch (error) {
         next(error);
@@ -355,7 +356,7 @@ exports.getTeachersFromSubjects = (0, AsyncHandler_1.asyncHandler)((req, res, ne
         if (TeacherDetails.length === 0) {
             throw new Responses_1.ApiErrorResponse(404, "Teacher Not found with this category");
         }
-        return (0, Responses_1.ApiSuccessResponse)(res, 200, "Teacher Found Successfully done!", TeacherDetails);
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "Teacher Found Successfully done!", TeacherDetails);
     }
     catch (error) {
         next(error);
@@ -412,7 +413,7 @@ exports.studentInquiredForTeacher = (0, AsyncHandler_1.asyncHandler)((req, res, 
         ]);
         if (allInquary.length === 0)
             throw new Responses_1.ApiErrorResponse(404, "You haven't apply for any teacher ");
-        return (0, Responses_1.ApiSuccessResponse)(res, 200, "Successfully Found", allInquary);
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "Successfully Found", allInquary);
     }
     catch (error) {
         next(error);

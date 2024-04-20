@@ -53,7 +53,7 @@ exports.RegisterTeacher = (0, AsyncHandler_1.asyncHandler)((req, res, next) => _
             yield newUser.save();
             yield newTeacher.save();
             yield (0, Workers_1.addEmailVerificationQueue)(newUser.email, otp, newUser.name);
-            return (0, Responses_1.ApiSuccessResponse)(res, 200, "OTP send in your email ");
+            (0, Responses_1.ApiSuccessResponse)(res, 200, "OTP send in your email ");
         }
         catch (error) {
             if (error.keyValue.email) {
@@ -72,7 +72,7 @@ exports.checkStudentEnroll = (0, AsyncHandler_1.asyncHandler)((req, res, next) =
         const EnrollStudents = yield Teacher_Models_1.Admission.find({ $and: [{ teacher: teacher.teacherId }, { status: "DONE" }] });
         if (EnrollStudents.length === 0)
             throw new Responses_1.ApiErrorResponse(404, "No enroll students found ");
-        return (0, Responses_1.ApiSuccessResponse)(res, 200, "Successfully found", EnrollStudents);
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "Successfully found", EnrollStudents);
     }
     catch (error) {
         next(error);
@@ -93,7 +93,7 @@ exports.updateDetailsTeacher = (0, AsyncHandler_1.asyncHandler)((req, res, next)
         locality && (AnotherTeacherDetails.locality = locality);
         completeAddress && (AnotherTeacherDetails.completeAddress = completeAddress);
         yield AnotherTeacherDetails.save({ validateBeforeSave: false });
-        return (0, Responses_1.ApiSuccessResponse)(res, 200, "Update changes successfully done!");
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "Update changes successfully done!");
     }
     catch (error) {
         next(error);
@@ -171,7 +171,7 @@ exports.addCoverImages = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __
             }
         })));
         yield teacher.save({ validateBeforeSave: false });
-        return (0, Responses_1.ApiSuccessResponse)(res, 200, "Cover image successfully done!");
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "Cover image successfully done!");
     }
     catch (error) {
         next(error);
@@ -198,7 +198,7 @@ exports.removeCoverImages = (0, AsyncHandler_1.asyncHandler)((req, res, next) =>
         removePhotoarr.map(item => {
             fs_1.default.unlinkSync(item);
         });
-        return (0, Responses_1.ApiSuccessResponse)(res, 200, "Successsfully Removed cover images");
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "Successsfully Removed cover images");
     }
     catch (error) {
         next(error);

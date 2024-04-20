@@ -64,7 +64,7 @@ exports.verifyEmail = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __awa
         FoundEmail.incorrectPasswordCounter = 5;
         FoundEmail.save({ validateBeforeSave: false });
         yield (0, Workers_1.addOnBoardingEmailQueue)(FoundEmail.email, FoundEmail.userName, FoundEmail.name);
-        return (0, Responses_1.ApiSuccessResponse)(res, 200, "Email successfully verifyed", FoundEmail);
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "Email successfully verifyed", FoundEmail);
     }
     catch (error) {
         next(error);
@@ -87,7 +87,7 @@ exports.generateResendOTP = (0, AsyncHandler_1.asyncHandler)((req, res, next) =>
             FoundUser.emailVerificationExpiry = tokenExpiry;
             FoundUser.save({ validateBeforeSave: false });
             yield (0, Workers_1.addEmailVerificationQueue)(FoundUser.email, otp, FoundUser.name);
-            return (0, Responses_1.ApiSuccessResponse)(res, 200, "OTP send ");
+            (0, Responses_1.ApiSuccessResponse)(res, 200, "OTP send ");
         }
         if (FoundUser.incorrectPasswordCounter === 0) {
             throw new Responses_1.ApiErrorResponse(403, "You have reached your otp tries limit try again 24 hours");
@@ -110,7 +110,7 @@ exports.updateDetails = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __a
         name && (student.name = name);
         currentClass && (studentDetails.currentClass = currentClass);
         yield student.save({ validateBeforeSave: false });
-        return (0, Responses_1.ApiSuccessResponse)(res, 200, "Update changes successfully done!");
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "Update changes successfully done!");
     }
     catch (error) {
         next(error);
@@ -140,7 +140,7 @@ exports.forgotPasswordDirectly = (0, AsyncHandler_1.asyncHandler)((req, res, nex
         student.password = password;
         student.incorrectPasswordCounter = 5;
         yield student.save({ validateBeforeSave: false });
-        return (0, Responses_1.ApiSuccessResponse)(res, 200, "Password changed successfully done ");
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "Password changed successfully done ");
     }
     catch (error) {
         next(error);
@@ -163,7 +163,7 @@ exports.changeUserEmail = (0, AsyncHandler_1.asyncHandler)((req, res, next) => _
         }
         user.email = newEmail;
         yield user.save({ validateBeforeSave: false });
-        return (0, Responses_1.ApiSuccessResponse)(res, 200, "Successfully Email Changed ");
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "Successfully Email Changed ");
     }
     catch (error) {
         next(error);
@@ -184,7 +184,7 @@ exports.generatePasswordResetTokens = (0, AsyncHandler_1.asyncHandler)((req, res
         isUserFound.forgotPasswordExpiry = tokenExpiry;
         yield isUserFound.save({ validateBeforeSave: false });
         yield (0, Workers_1.addResetPasswordEmailQueue)(email, otp, isUserFound.name);
-        return (0, Responses_1.ApiSuccessResponse)(res, 200, "Email send please check and reset your password");
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "Email send please check and reset your password");
     }
     catch (error) {
         next(error);
@@ -216,7 +216,7 @@ exports.changePasswordFromEmailOTP = (0, AsyncHandler_1.asyncHandler)((req, res,
         isUserFound.password = hashedPassword;
         isUserFound.forgotPasswordToken = "";
         yield isUserFound.save({ validateBeforeSave: false });
-        return (0, Responses_1.ApiSuccessResponse)(res, 200, "Successfully reset your password");
+        (0, Responses_1.ApiSuccessResponse)(res, 200, "Successfully reset your password");
     }
     catch (error) {
         next(error);
