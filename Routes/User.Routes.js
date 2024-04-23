@@ -19,5 +19,5 @@ Router.route("/change/email").patch(AuthCheck_Middleware_1.UserAuthCheck, User_C
 Router.route("/generate/password/tokens").patch(User_Controller_1.generatePasswordResetTokens);
 Router.route("/change/password/otp").patch(User_Controller_1.changePasswordFromEmailOTP);
 Router.route("/get/NewAccessToken").get(User_Controller_1.getNewAccessToken);
-Router.route('/set/avatar').patch(AuthCheck_Middleware_1.UserAuthCheck, Multer_Middleware_1.uploadLocal.single("avatar"), User_Controller_1.setNewAvatar);
+Router.route('/set/avatar').patch(AuthCheck_Middleware_1.UserAuthCheck, Multer_Middleware_1.uploadLocal.single("profileImage"), User_Controller_1.setNewAvatar);
 exports.default = Router;
