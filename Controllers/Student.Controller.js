@@ -191,6 +191,8 @@ exports.showTeachers = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __aw
                                 name: 1,
                                 email: 1,
                                 phoneNumber: 1,
+                                avatar: 1,
+                                userName: 1,
                             }
                         }
                     ]
@@ -210,7 +212,6 @@ exports.showTeachers = (0, AsyncHandler_1.asyncHandler)((req, res, next) => __aw
         (0, Responses_1.ApiSuccessResponse)(res, 200, "Teacher Found", Teachers);
     }
     catch (error) {
-        throw new Error(error);
         next(error);
     }
 }));
